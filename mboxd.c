@@ -58,9 +58,6 @@
 #define MSG_OUT(f_, ...) do { if (verbosity != MBOX_LOG_NONE) { mbox_log(LOG_INFO, f_, ##__VA_ARGS__); } } while(0)
 #define MSG_ERR(f_, ...) do { if (verbosity != MBOX_LOG_NONE) { mbox_log(LOG_ERR, f_, ##__VA_ARGS__); } } while(0)
 
-#define BOOT_HICR7 0x30000e00U
-#define BOOT_HICR8 0xfe0001ffU
-
 struct mbox_context {
 	struct pollfd fds[TOTAL_FDS];
 	void *lpc_mem;
@@ -84,24 +81,23 @@ static int point_to_flash(struct mbox_context *context)
 	/*
 	 * Point it to the real flash for sanity.
 	 *
-	 * This function assumes 32MB of flash which means that that
-	 * hostboot expects flash to be at 0x0e000000 - 0x0fffffff on the
-	 * LPC bus. If the machine actually has 64MB of flash then the
-	 * map.addr should be 0x0c000000. TODO
+	 * This function assumes 64MB of flash which means that that
+	 * hostboot expects flash to be at 0x0c000000 - 0x0fffffff on the
+	 * LPC bus.
 	 *
 	 * Until hostboot learns how to talk to this daemon this hardcode will
 	 * get hostboot going. Furthermore, when hostboot does learn to talk
 	 * then this mapping is unnecessary and this code should be removed.
 	 */
 
-	map.addr = 0x0e000000;
-	map.size = 0x02000000; /* 32MB */
+	map.addr = 0x0c000000;
+	map.size = 0x04000000; /* 64MB */
 	map.offset = 0;
 	map.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH;
 	map.window_id = 0; /* Theres only one */
 
 	MSG_OUT("Pointing HOST LPC bus at the actual flash\n");
-	MSG_OUT("Assuming 32MB of flash: HOST LPC 0x%08x\n", map.addr);
+	MSG_OUT("Assuming 64MB of flash: HOST LPC 0x%08x\n", map.addr);
 
 	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
 		r = -errno;
